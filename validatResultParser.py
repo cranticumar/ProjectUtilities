@@ -11,21 +11,31 @@ argParser.add_argument('-d', '--dir', dest='directory', required=True,
 args = argParser.parse_args()
 directory = args.directory
 
-results = list()
+results = dict()
+
+if os.path.exists('results.csv'):
+    with open('results.csv', 'rb') as csvfiler:
+        r = csv.reader(csvfiler)
+        for row in r:
+            results[row[1]] = [row[2], row[0]]
 
 for testcase in os.listdir(directory):
     testresultsdir = os.path.join(directory, testcase, 'TestResults')
-    if not os.path.exists(testresultsdir):
-        results.append([testcase, 'Malfunctioned'])
+
+    if not os.path.exists(testresultsdir) and testcase not in results.keys():
+        results[testcase] = ['Malfunctioned', directory]
     else:
-        resFile = os.path.join(testresultsdir, 'Results.txt')
-        with open(resFile, 'rb') as resHandle:
-            result = re.search('\[(\w+)\]', resHandle.readlines()[1]).group(1)
-            results.append([testcase, result])
+        if not os.path.exists(testresultsdir):
+            results[testcase] = ['Malfunctioned', directory]
+        else:
+            resFile = os.path.join(testresultsdir, 'Results.txt')
+            with open(resFile, 'rb') as resHandle:
+                result = re.search('\[(\w+)\]', resHandle.readlines()[1]).group(1)
+                results[testcase] = [result, directory]
 
-pp.pprint(results)
+# pp.pprint(results)
 
-with open(os.path.join(directory, 'results.csv'), 'wb') as csvfile:
-    w = csv.writer(csvfile)
-    for res in results:
-        w.writerow(res)
+with open('results.csv', 'wb') as csvfilew:
+    w = csv.writer(csvfilew)
+    for key, value in results.items():
+        w.writerow([key] + value)
